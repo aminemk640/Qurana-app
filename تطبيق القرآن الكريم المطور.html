@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="تطبيق القرآن الكريم - استماع وتلاوة للقرآن الكريم بأصوات أشهر القراء">
+    <title>تطبيق القرآن الكريم - الإصدار الحديث</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #0f766e;
+            --primary-dark: #134e4a;
+            --accent: #2dd4bf;
+            --bg-dark: #0a0a0a;
+            --card-dark: #171717;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --focus-ring: 0 0 0 4px rgba(45, 212, 191, 0.5);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* الوضع الفاتح */
+        body.light-mode {
+            --bg-dark: #f1f5f9;
+            --card-dark: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --primary: #0d9488;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        /* شاشة التحميل */
+        #splash {
+            position: fixed;
+            inset: 0;
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            transition: opacity 0.6s ease, visibility 0.6s;
+        }
+
+        .loader-ring {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--primary-dark);
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-top: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* الهيدر */
+        header {
+            background-color: var(--primary-dark);
+            color: white;
+            padding: 0 5%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            height: 70px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        .header-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 50%;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            outline: none;
+        }
+
+        .header-btn:focus, .qari-card:focus {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: var(--focus-ring);
+            transform: scale(1.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        .logo img { height: 40px; }
+
+        /* شريط البحث */
+        .search-section {
+            background: var(--card-dark);
+            padding: 15px 5%;
+            display: none;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            animation: fadeInDown 0.4s ease;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .search-container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 4px 12px;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        #searchbar {
+            background: transparent;
+            border: none;
+            color: white;
+            flex: 1;
+            padding: 12px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        /* الشبكة الرئيسية */
+        main {
+            padding: 40px 5%;
+            min-height: 80vh;
+        }
+
+        .qurra-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 24px;
+        }
+
+        .qari-card {
+            background: var(--card-dark);
+            border-radius: 24px;
+            padding: 24px;
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.05);
+            outline: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .qari-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+        }
+
+        .avatar-wrap {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            padding: 4px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            margin-bottom: 16px;
+        }
+
+        .avatar-wrap img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--card-dark);
+        }
+
+        .qari-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+        }
+
+        .qari-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            background: rgba(0,0,0,0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        /* القائمة الجانبية */
+        #sidebar {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 300px;
+            height: 100%;
+            background: var(--card-dark);
+            z-index: 1000;
+            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 30px 20px;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+        }
+
+        #sidebar.open { right: 0; }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 14px 20px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            outline: none;
+        }
+
+        .nav-item:hover, .nav-item:focus {
+            background: var(--primary);
+            color: white;
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            z-index: 999;
+            backdrop-filter: blur(4px);
+        }
+
+        /* مخصص للتلفاز */
+        @media (hover: none) {
+            .qari-card:focus {
+                background: var(--primary-dark) !important;
+                border-color: var(--accent);
+            }
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* رسالة منبثقة مخصصة */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--primary-dark);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+            z-index: 3000;
+        }
+
+        #toast.show { transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body>
+
+    <div id="splash">
+        <img src="https://i.imgur.com/3Ewyfx6.png" width="120" alt="Logo">
+        <h2 style="color: var(--accent); margin-top: 15px;">القرآن الكريم</h2>
+        <div class="loader-ring"></div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+
+    <nav id="sidebar">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+            <h3 style="margin:0">القائمة</h3>
+            <button class="header-btn" onclick="toggleSidebar()"><i data-lucide="x"></i></button>
+        </div>
+        <div class="nav-item" tabindex="0" onclick="goHome()"><i data-lucide="home"></i> الرئيسية</div>
+        <div class="nav-item" tabindex="0" onclick="showToast('قريباً إن شاء الله')"><i data-lucide="heart"></i> المفضلة</div>
+        <div class="nav-item" tabindex="0" onclick="toggleTheme()"><i data-lucide="sun"></i> الوضع الفاتح/الداكن</div>
+        <div class="nav-item" tabindex="0" onclick="showAbout()"><i data-lucide="info"></i> حول التطبيق</div>
+    </nav>
+
+    <header>
+        <button class="header-btn" id="menu-btn" onclick="toggleSidebar()"><i data-lucide="menu"></i></button>
+        <div class="logo">
+            <img src="https://i.imgur.com/3Ewyfx6.png" alt="Logo">
+            <span>القرآن الكريم</span>
+        </div>
+        <button class="header-btn" onclick="toggleSearch()"><i data-lucide="search"></i></button>
+    </header>
+
+    <div class="search-section" id="searchSection">
+        <div class="search-container">
+            <i data-lucide="search" size="18" style="color:var(--text-muted)"></i>
+            <input type="text" id="searchbar" placeholder="ابحث عن قارئك المفضل..." oninput="handleSearch()">
+            <button class="header-btn" onclick="clearSearch()" style="color:var(--text-muted)"><i data-lucide="refresh-cw" size="16"></i></button>
+        </div>
+    </div>
+
+    <main id="main-content">
+        <div class="qurra-grid" id="qurraGrid">
+            <!-- سيتم الملء بواسطة JS -->
+        </div>
+        <div id="noResults" style="display:none; text-align:center; padding:50px;">
+            <i data-lucide="search-x" size="60" style="color:var(--text-muted)"></i>
+            <p style="margin-top:20px; font-size:1.2rem;">لا توجد نتائج مطابقة لبحثك</p>
+        </div>
+    </main>
+
+    <div id="toast"></div>
+
+    <footer>
+        <p>تطبيق القرآن الكريم المطور © 2024</p>
+        <p style="opacity:0.6; font-size:0.8rem">نسخة التلفاز الذكي والأندرويد v2.0</p>
+    </footer>
+
+    <script>
+        // الأيقونات
+        lucide.createIcons();
+
+        // البيانات
+        const qurra = [
+            { id: 1, name: "أبو بكر الشاطري", meta: "حفص عن عاصم", img: "https://i.imgur.com/Zeo8fdG.jpg", url: "https://raw.githack.com/ahmadmk2023/qouran-free/main/%D8%A3%D8%A8%D9%88%20%D8%A8%D9%83%D8%B1%20%D8%A7%D9%84%D8%B4%D8%A7%D8%B7%D8%B1%D9%8I.html" },
+            { id: 2, name: "أحمد العجمي", meta: "حفص عن عاصم", img: "https://i.imgur.com/GZ4jYCq.jpg", url: "https://raw.githack.com/ahmadmk2023/qouran-free/main/%D8%A3%D8%AD%D9%85%D8%AF%20%D8%A7%D9%84%D8%B9%D8%AC%D9%85%D9%8A.html" },
+            { id: 3, name: "سعد الغامدي", meta: "حفص عن عاصم", img: "https://i.imgur.com/evXRqWQ.jpg", url: "https://raw.githack.com/ahmadmk2023/qouran-free/main/%D8%B3%D8%B9%D8%AF%20%D8%A7%D9%84%D8%BA%D8%A7%D9%85%D8%AF%D9%8A.html" },
+            { id: 4, name: "ماهر المعيقلي", meta: "حفص عن عاصم", img: "https://i.imgur.com/8oJn1cS.jpg", url: "#" },
+            { id: 5, name: "عبد الباسط عبد الصمد", meta: "المصحف المجود", img: "https://i.imgur.com/XsFJ4LK.jpg", url: "#" },
+            { id: 6, name: "مشاري العفاسي", meta: "حفص عن عاصم", img: "https://i.imgur.com/hVIWgbS.jpg", url: "#" },
+            { id: 7, name: "ياسر الدوسري", meta: "حفص عن عاصم", img: "https://i.imgur.com/8oJn1cS.jpg", url: "#" },
+            { id: 8, name: "ناصر القطامي", meta: "حفص عن عاصم", img: "https://i.imgur.com/Zeo8fdG.jpg", url: "#" }
+        ];
+
+        const grid = document.getElementById('qurraGrid');
+        const searchInput = document.getElementById('searchbar');
+
+        // وظيفة العرض
+        function render(data) {
+            grid.innerHTML = '';
+            data.forEach(q => {
+                const card = document.createElement('div');
+                card.className = 'qari-card';
+                card.tabIndex = 0;
+                card.innerHTML = `
+                    <div class="avatar-wrap">
+                        <img src="${q.img}" alt="${q.name}">
+                    </div>
+                    <div class="qari-name">${q.name}</div>
+                    <div class="qari-meta">${q.meta}</div>
+                `;
+                card.onclick = () => {
+                    if(q.url !== "#") window.open(q.url, '_blank');
+                    else showToast('سيتم إضافة تلاوات الشيخ قريباً');
+                };
+                card.onkeydown = (e) => { if(e.key === 'Enter') card.click(); };
+                grid.appendChild(card);
+            });
+            
+            document.getElementById('noResults').style.display = data.length ? 'none' : 'block';
+        }
+
+        // البحث
+        function handleSearch() {
+            const term = searchInput.value.toLowerCase();
+            const filtered = qurra.filter(q => q.name.includes(term));
+            render(filtered);
+        }
+
+        function clearSearch() {
+            searchInput.value = '';
+            render(qurra);
+            searchInput.focus();
+        }
+
+        // التبديل
+        function toggleSidebar() {
+            const side = document.getElementById('sidebar');
+            const over = document.getElementById('overlay');
+            const isOpen = side.classList.toggle('open');
+            over.style.display = isOpen ? 'block' : 'none';
+            if(isOpen) side.querySelector('.nav-item').focus();
+        }
+
+        function toggleSearch() {
+            const sec = document.getElementById('searchSection');
+            const isHidden = getComputedStyle(sec).display === 'none';
+            sec.style.display = isHidden ? 'block' : 'none';
+            if(isHidden) searchInput.focus();
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            showToast('تم تغيير مظهر التطبيق');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function showAbout() {
+            showToast('إصدار v2.0 - تم التطوير لخدمة القرآن الكريم');
+        }
+
+        function goHome() {
+            clearSearch();
+            if(document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
+            window.scrollTo({top:0, behavior:'smooth'});
+        }
+
+        // إدارة الريموت كنترول (الأسهم)
+        document.addEventListener('keydown', (e) => {
+            const active = document.activeElement;
+            if(e.key === 'Escape') {
+                if(document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
+                else if(getComputedStyle(document.getElementById('searchSection')).display !== 'none') toggleSearch();
+            }
+        });
+
+        // تشغيل
+        window.onload = () => {
+            render(qurra);
+            setTimeout(() => {
+                const splash = document.getElementById('splash');
+                splash.style.opacity = '0';
+                splash.style.visibility = 'hidden';
+            }, 1500);
+        };
+    </script>
+</body>
+</html>
